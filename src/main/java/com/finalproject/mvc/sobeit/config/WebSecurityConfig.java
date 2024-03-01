@@ -27,9 +27,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement() // session 기반이 아님을 선언
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authorizeRequests() // /와 /auth/**, /sms/** 경로는 인증 안 해도 된다.
-                    .antMatchers("/", "/auth/**", "/sms/**").permitAll()
-                .anyRequest() // /와 /auth/** 이외의 모든 경로는 인증해야 된다.
+                .authorizeRequests() // /와 /auth/**, /sms/**, /v3/api-docs/**, /swagger-ui.html, /swagger-ui/**, /api/v3/**, /swagger-resources/**, /webjars/** 경로는 인증 안 해도 된다.
+                    .antMatchers("/", "/auth/**", "/sms/**",
+                            "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**",
+                            "/api/v3/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                .anyRequest() // /와 /auth/**, /sms/**, /v3/api-docs/**, /swagger-ui.html, /swagger-ui/**, /api/v3/**, /swagger-resources/**, /webjars/** 이외의 모든 경로는 인증해야 된다.
                     .authenticated();
 
         // filter 등록
