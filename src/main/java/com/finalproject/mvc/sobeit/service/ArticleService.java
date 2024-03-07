@@ -42,15 +42,15 @@ public interface ArticleService {
      */
     public Article saveArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException;
 
-    public void updateArticleImageUrl(Long articleSeq, String url);
-
     /**
      * 글 수정
      * @param user
      * @param articleDTO
      * @return 수정된 글
      */
-    public Article updateArticle(Users user, ArticleDTO articleDTO);
+    public Article updateArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws IOException;
+
+    public Article saveUpdateArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException;
 
     /**
      * 글 삭제
