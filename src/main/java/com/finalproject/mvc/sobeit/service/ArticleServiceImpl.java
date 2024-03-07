@@ -13,8 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class ArticleServiceImpl implements ArticleService{
     private final UserRepo userRepo;
 
     private final ProfileService profileService;
+    private final S3Service s3Service;
 
     /**
      * 글 작성
@@ -42,12 +45,48 @@ public class ArticleServiceImpl implements ArticleService{
      * @return 저장된 글
      */
     @Override
-    public Article writeArticle(Users user, ArticleDTO articleDTO) throws RuntimeException{
+    public Article writeArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws RuntimeException, IOException {
+        // 이미지 파일을 S3에 업로드
+        String imageUrl = null;
+
+        if (file != null) {
+            imageUrl = s3Service.articleImageUpload(file);
+            if (imageUrl==null) { // 이미지 저장에 실패한 경우
+                throw new RuntimeException("이미지 저장 중 에러가 발생하였습니다.");
+            }
+        }
+
+        // 글 저장
+        Article savedArticle = null;
+        try {
+            savedArticle = saveArticle(user, articleDTO, file, imageUrl);
+        }
+        catch (RuntimeException e){
+            // DB 저장 실패 시 S3에서 파일 삭제
+            if (imageUrl != null){
+                s3Service.deleteImage(imageUrl);
+            }
+            throw new RuntimeException("글 저장 중 에러가 발생하였습니다.");
+        }
+
+        return savedArticle;
+    }
+
+    /**
+     * 글 저장
+     * @param user
+     * @param articleDTO
+     * @param file
+     * @param imageUrl
+     * @return
+     * @throws IOException
+     */
+    public Article saveArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException {
         // 요청 이용해 저장할 글 생성
         Article article = Article.builder()
                 .user(user)
                 .status(articleDTO.getStatus())
-                .imageUrl(articleDTO.getImageUrl())
+                .imageUrl(imageUrl)
                 .expenditureCategory(articleDTO.getExpenditureCategory())
                 .amount(articleDTO.getAmount())
                 .financialText(articleDTO.getFinancialText())
