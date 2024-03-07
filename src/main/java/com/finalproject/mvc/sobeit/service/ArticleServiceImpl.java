@@ -167,10 +167,10 @@ public class ArticleServiceImpl implements ArticleService{
         int replyCnt = replyRepo.findReplyCountByArticleSeq(articleSeq);
 
         // 좋아요 수 가져오기
-        int likeCnt = countArticleLike(articleSeq);
+        int likeCnt = articleLikeRepo.findCountArticleLikeByArticleSeq(articleSeq);
 
         // 좋아요 여부 확인
-        ArticleLike articleLike = findArticleLike(userSeq, articleSeq);
+        ArticleLike articleLike = articleLikeRepo.findArticleLikeByUserSeqAndArticleSeq(userSeq, articleSeq).orElse(null);
         boolean isLiked = true;
         if (articleLike==null) isLiked = false;
 
@@ -263,7 +263,7 @@ public class ArticleServiceImpl implements ArticleService{
             throw new RuntimeException("좋아요할 글이 존재하지 않습니다.");
         }
 
-        ArticleLike existingLike = findArticleLike(user.getUserSeq(), articleSeq); // 기존 좋아요가 있는 지 확인
+        ArticleLike existingLike = articleLikeRepo.findArticleLikeByUserSeqAndArticleSeq(user.getUserSeq(), articleSeq).orElse(null); // 기존 좋아요가 있는 지 확인
         if (existingLike==null){ // 좋아요한 적 없으면 좋아요 생성
             Article articleById = selectArticleById(articleSeq);
             ArticleLike articleLike = ArticleLike.builder()
@@ -328,25 +328,6 @@ public class ArticleServiceImpl implements ArticleService{
             articleLikeRepo.delete(existingLike);
             return false;
         }
-    }
-
-    /**
-     * 기존 좋아요 확인
-     * @param userSeq
-     * @param articleSeq
-     * @return
-     */
-    public ArticleLike findArticleLike(Long userSeq, Long articleSeq) {
-        return articleLikeRepo.findArticleLikeByUserSeqAndArticleSeq(userSeq, articleSeq).orElse(null);
-    }
-
-    /**
-     * 글 좋아요 수 확인
-     * @param articleSeq
-     * @return 좋아요 수
-     */
-    public int countArticleLike(Long articleSeq){
-        return articleLikeRepo.findCountArticleLikeByArticleSeq(articleSeq);
     }
 
     /**
