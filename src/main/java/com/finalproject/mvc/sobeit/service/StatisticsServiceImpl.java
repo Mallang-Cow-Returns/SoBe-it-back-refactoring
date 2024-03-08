@@ -32,19 +32,17 @@ public class StatisticsServiceImpl implements StatisticsService{
 
         // 1일~31일 일별 지출 가져오기
         for(int i=31; i>0;i--) {
+            LocalDate date = LocalDate.of(year, month, i);
+
             // 일별 지출 목록 생성
             List<ExpenditureResponseDTO> list = getExpenditureDay(userSeq, year, month, i);
             // 지출 목록이 없는 날이면 패스
-            if (list==null || list.size()==0) continue;
+            if (list==null || list.isEmpty()) continue;
 
-            Long amount = new Long(0);
             // 오늘 쓴 지출 금액 가져오기
-            for(ExpenditureResponseDTO dto : list){
-                amount+=dto.getAmount();
-            }
+            Long amount = articleRepo.findSumAmountByConsumptionDate(userSeq, date);
 
             // 날짜 + 지출목록 리스트를 가진 Response 객체 생성 후 리스트에 추가
-            LocalDate date = LocalDate.of(year, month, i);
             ExpenditureListResponseDTO resp = ExpenditureListResponseDTO.builder()
                     .date(date)
                     .amount(amount)
@@ -76,7 +74,7 @@ public class StatisticsServiceImpl implements StatisticsService{
             // 가계부 메모 가져오기
             String context = article.getFinancialText();
             // 가계부 메모가 없다면 글 내용 가져오기
-            if (context == null || context.length()==0){
+            if (context == null || context.isEmpty()){
                 context = article.getArticleText();
             }
             // ResponseDTO 생성
