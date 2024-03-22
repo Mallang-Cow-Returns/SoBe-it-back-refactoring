@@ -29,15 +29,14 @@ public class GoalAmountServiceImpl implements GoalAmountService{
 
     /**
      * 유저에 대한 성공한 도전과제 개수&도전과제 개수
-     * @param userId
+     * @param user
      * @return 성공한 도전과제 개수&도전과제 개수
      */
     @Override
-    public GoalAmountCntDTO goalAmountCnt(String userId) {
-        int successCnt = goalAmountRep.findGoalAmountSeqSuccess(userId).size();
-        int AllCnt = goalAmountRep.findGoalAmountSeq(userId).size();
+    public GoalAmountCntDTO goalAmountCnt(Users user) {
+        int successCnt = goalAmountRep.findGoalAmountSeqSuccess(user.getUserId()).size();
+        int AllCnt = goalAmountRep.findGoalAmountSeq(user.getUserId()).size();
 
-        Users user = userRep.findByUserId(userId);
         String currentTier = user.getUserTier();
         String nextTier = "";
         int leftCnt = 0;

@@ -13,10 +13,10 @@ import java.util.List;
 public interface GoalAmountService {
     /**
      * 도전과제 정보 가져오기(성공한 도전과제 갯수,도전과제 갯수)
-     * @param userId
+     * @param user
      * @return 성공한 도전과제 갯수&도전과제 갯수
      **/
-    GoalAmountCntDTO goalAmountCnt(String userId);
+    GoalAmountCntDTO goalAmountCnt(Users user);
 
     /**
      * 도전과제 정보 가져오기(도전과제 리스트)
