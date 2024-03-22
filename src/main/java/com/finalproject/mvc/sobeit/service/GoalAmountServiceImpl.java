@@ -34,8 +34,8 @@ public class GoalAmountServiceImpl implements GoalAmountService{
      */
     @Override
     public GoalAmountCntDTO goalAmountCnt(Users user) {
-        int successCnt = goalAmountRep.findGoalAmountSeqSuccess(user.getUserId()).size();
-        int AllCnt = goalAmountRep.findGoalAmountSeq(user.getUserId()).size();
+        int successCnt = goalAmountRep.findCountGoalAmountSuccess(user.getUserId());
+        int allCnt = goalAmountRep.findCountGoalAmount(user.getUserId());
 
         String currentTier = user.getUserTier();
         String nextTier = "";
@@ -66,7 +66,7 @@ public class GoalAmountServiceImpl implements GoalAmountService{
 
         GoalAmountCntDTO cntDTO = GoalAmountCntDTO.builder()
                 .successGoalAmountCnt(successCnt)
-                .goalAmountCnt(AllCnt)
+                .goalAmountCnt(allCnt)
                 .nextTier(nextTier)
                 .leftCnt(leftCnt)
                 .build();
