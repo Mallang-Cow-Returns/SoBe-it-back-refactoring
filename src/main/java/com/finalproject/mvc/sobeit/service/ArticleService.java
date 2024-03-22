@@ -15,7 +15,9 @@ import org.json.simple.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,9 +29,18 @@ public interface ArticleService {
      * @param articleDTO
      * @return 작성된 글
      */
-    public Article writeArticle(Users user, ArticleDTO articleDTO);
+    public Article writeArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws IOException;
 
-    public void updateArticleImageUrl(Long articleSeq, String url);
+    /**
+     * 글 저장
+     * @param user
+     * @param articleDTO
+     * @param file
+     * @param imageUrl
+     * @return
+     * @throws IOException
+     */
+    public Article saveArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException;
 
     /**
      * 글 수정
@@ -37,7 +48,9 @@ public interface ArticleService {
      * @param articleDTO
      * @return 수정된 글
      */
-    public Article updateArticle(Users user, ArticleDTO articleDTO);
+    public Article updateArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws IOException;
+
+    public Article saveUpdateArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException;
 
     /**
      * 글 삭제

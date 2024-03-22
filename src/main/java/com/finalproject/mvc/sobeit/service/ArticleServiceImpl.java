@@ -13,8 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class ArticleServiceImpl implements ArticleService{
     private final UserRepo userRepo;
 
     private final ProfileService profileService;
+    private final S3Service s3Service;
 
     /**
      * 글 작성
@@ -42,12 +45,51 @@ public class ArticleServiceImpl implements ArticleService{
      * @return 저장된 글
      */
     @Override
-    public Article writeArticle(Users user, ArticleDTO articleDTO) throws RuntimeException{
+    public Article writeArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws RuntimeException, IOException {
+        /**
+         * 이미지 파일을 S3에 업로드하고
+         * 리턴받은 URL을 DB에 저장
+         */
+        String imageUrl = null;
+
+        if (file != null) {
+            imageUrl = s3Service.articleImageUpload(file);
+            if (imageUrl==null) { // 이미지 저장에 실패한 경우
+                throw new RuntimeException("이미지 저장 중 에러가 발생하였습니다.");
+            }
+        }
+
+        // 글 저장
+        Article savedArticle = null;
+        try {
+            savedArticle = saveArticle(user, articleDTO, file, imageUrl);
+        }
+        catch (RuntimeException e){
+            // DB 저장 실패 시 S3에서 파일 삭제
+            if (imageUrl != null){
+                s3Service.deleteImage(imageUrl);
+            }
+            throw new RuntimeException("글 저장 중 에러가 발생하였습니다.");
+        }
+
+        return savedArticle;
+    }
+
+    /**
+     * 글 저장
+     * @param user
+     * @param articleDTO
+     * @param file
+     * @param imageUrl
+     * @return
+     * @throws IOException
+     */
+    public Article saveArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException {
         // 요청 이용해 저장할 글 생성
         Article article = Article.builder()
                 .user(user)
                 .status(articleDTO.getStatus())
-                .imageUrl(articleDTO.getImageUrl())
+                .imageUrl(imageUrl)
                 .expenditureCategory(articleDTO.getExpenditureCategory())
                 .amount(articleDTO.getAmount())
                 .financialText(articleDTO.getFinancialText())
@@ -60,10 +102,6 @@ public class ArticleServiceImpl implements ArticleService{
         return articleRepo.save(article);
     }
 
-    @Override
-    public void updateArticleImageUrl(Long articleSeq, String url){
-        articleRepo.updateImageUrl(articleSeq, url);
-    }
     /**
      * 글 수정
      * @param user
@@ -71,31 +109,61 @@ public class ArticleServiceImpl implements ArticleService{
      * @return 수정된 글
      */
    @Override
-    public Article updateArticle(Users user, ArticleDTO articleDTO) throws RuntimeException{
-       Article existingArticle = articleRepo.findById(articleDTO.getArticleSeq()).orElse(null); // 수정할 글 가져오기
-       if (existingArticle==null) { // 수정할 글이 없는 경우 예외 발생
-           throw new RuntimeException("수정할 글이 없습니다.");
-       }
-       if (user.getUserSeq() != existingArticle.getUser().getUserSeq()){ // 기존 글의 작성자가 아니면 예외 발생
-           throw new RuntimeException("글의 작성자가 아닙니다.");
+    public Article updateArticle(Users user, ArticleDTO articleDTO, MultipartFile file) throws RuntimeException, IOException{
+       /**
+        * 이미지 파일을 S3에 업로드하고
+        * 리턴받은 URL을 DB에 업데이트
+        */
+       String imageUrl = null;
+
+       if (file != null) {
+           imageUrl = s3Service.articleImageUpload(file);
+           if (imageUrl==null) { // 이미지 저장에 실패한 경우
+               throw new RuntimeException("이미지 저장 중 에러가 발생하였습니다.");
+           }
        }
 
-       // 수정될 글
-       Article article = Article.builder()
-               .user(user)
-               .articleSeq(articleDTO.getArticleSeq())
-               .status(articleDTO.getStatus())
-               .imageUrl(articleDTO.getImageUrl())
-               .expenditureCategory(articleDTO.getExpenditureCategory())
-               .amount(articleDTO.getAmount())
-               .financialText(articleDTO.getFinancialText())
-               .articleText(articleDTO.getArticleText())
-               .writtenDate(existingArticle.getWrittenDate())
-               .articleType(existingArticle.getArticleType()) // 유형은 변경 불가
-               .consumptionDate(articleDTO.getConsumptionDate())
-               .editedDate(LocalDateTime.now())
-               .isAllowed(articleDTO.getIsAllowed())
-               .build();
+       // 글 저장
+       Article updatedArticle = null;
+       try {
+           updatedArticle = saveUpdateArticle(user, articleDTO, file, imageUrl);
+       }
+       catch (RuntimeException e){
+           // DB 저장 실패 시 S3에서 파일 삭제
+           if (imageUrl != null){
+               s3Service.deleteImage(imageUrl);
+           }
+           throw new RuntimeException("글 저장 중 에러가 발생하였습니다.");
+       }
+
+       return updatedArticle;
+    }
+
+    public Article saveUpdateArticle(Users user, ArticleDTO articleDTO, MultipartFile file, String imageUrl) throws IOException{
+        Article existingArticle = articleRepo.findById(articleDTO.getArticleSeq()).orElse(null); // 수정할 글 가져오기
+        if (existingArticle==null) { // 수정할 글이 없는 경우 예외 발생
+            throw new RuntimeException("수정할 글이 없습니다.");
+        }
+        if (user.getUserSeq() != existingArticle.getUser().getUserSeq()){ // 기존 글의 작성자가 아니면 예외 발생
+            throw new RuntimeException("글의 작성자가 아닙니다.");
+        }
+
+        // 수정될 글
+        Article article = Article.builder()
+                .user(user)
+                .articleSeq(articleDTO.getArticleSeq())
+                .status(articleDTO.getStatus())
+                .imageUrl((imageUrl==null)?articleDTO.getImageUrl():imageUrl)
+                .expenditureCategory(articleDTO.getExpenditureCategory())
+                .amount(articleDTO.getAmount())
+                .financialText(articleDTO.getFinancialText())
+                .articleText(articleDTO.getArticleText())
+                .writtenDate(existingArticle.getWrittenDate())
+                .articleType(existingArticle.getArticleType()) // 유형은 변경 불가
+                .consumptionDate(articleDTO.getConsumptionDate())
+                .editedDate(LocalDateTime.now())
+                .isAllowed(articleDTO.getIsAllowed())
+                .build();
         return articleRepo.save(article);
     }
 

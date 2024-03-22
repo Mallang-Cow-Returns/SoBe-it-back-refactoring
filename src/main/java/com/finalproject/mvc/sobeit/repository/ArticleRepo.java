@@ -27,10 +27,6 @@ public interface ArticleRepo extends JpaRepository<Article, Long> {
     @Query("select sum(a.amount) from Article a where a.user.userSeq = ?1 and a.consumptionDate = ?2")
     Optional<Long> findSumOfAmountByUserAndConsumptionDate(Long userSeq, LocalDate consumptionDate);
 
-    @Modifying
-    @Query("UPDATE Article a SET a.imageUrl = :newImageUrl WHERE a.articleSeq = :articleSeq")
-    void updateImageUrl(@Param("articleSeq") Long articleSeq, @Param("newImageUrl") String newImageUrl);
-
     @Query("select a from Article a where a.user.userSeq in : userSeq AND a.status = 1")
     List<Article> findByUserSeqsAndStatus(List<Long> userSeq);
 
