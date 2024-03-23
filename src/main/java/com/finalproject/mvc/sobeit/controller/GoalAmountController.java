@@ -24,13 +24,13 @@ public class GoalAmountController {
     /**
      * 도전과제 정보 가져오기(성공한 도전과제 갯수,도전과제 갯수)
      * 자기자신의 것만 확인 가능
-     * @param userIdMap
+     * @param user
      * @return 성공한 도전과제 갯수&도전과제 갯수
      **/
     @PostMapping("/cnt")
-    public ResponseEntity<?> selectGoalAmountSuccessCnt(@RequestBody Map<String, String> userIdMap) {
+    public ResponseEntity<?> selectGoalAmountSuccessCnt(@AuthenticationPrincipal Users user) {
         try {
-            GoalAmountCntDTO dto = goalAmountService.goalAmountCnt(userIdMap.get("userId"));
+            GoalAmountCntDTO dto = goalAmountService.goalAmountCnt(user);
             return ResponseEntity.ok().body(dto);
         } catch(Exception e) {
             ResponseDTO responseDTO = ResponseDTO.builder().error(e.getMessage()).build();
