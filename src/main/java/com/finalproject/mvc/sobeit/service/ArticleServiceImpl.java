@@ -217,11 +217,11 @@ public class ArticleServiceImpl implements ArticleService{
     public List<ArticleResponseDTO> feed(Users user, int size, Long lastArticleId) throws RuntimeException{
         Long userSeq = user.getUserSeq(); // 요청한 유저 번호
 
-
         // 권한에 맞는 글번호 리스트 가져오기
-        Page<Long> feedSeqList = selectFeedArticleSeq(user.getUserSeq(), size, lastArticleId);
+        Page<Long> feedSeqList = selectFeedArticleSeq(userSeq, size, lastArticleId);
         if (feedSeqList.isEmpty()) { // 가져온 글이 없다면
-            throw new RuntimeException("조회할 피드의 글이 없습니다.");
+            // throw new RuntimeException("조회할 피드의 글이 없습니다.");
+            return null;
         }
 
         // ArticleResponseDTO 가져오기
