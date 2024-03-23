@@ -189,7 +189,7 @@ public class ArticleController {
     /**
      * 사이드바 인기 게시물 가져오기
      * */
-    @PostMapping("/hotpost")
+    @GetMapping("/hotpost")
     public ResponseEntity<?> selectHotPost(@AuthenticationPrincipal Users user) {
         try {
             List<ArticleResponseDTO> list = articleService.selectHotPost(user);
