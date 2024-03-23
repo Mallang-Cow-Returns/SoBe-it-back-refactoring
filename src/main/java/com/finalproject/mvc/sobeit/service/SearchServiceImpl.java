@@ -54,21 +54,22 @@ public class SearchServiceImpl implements SearchService{
     public List<ArticleResponseDTO> articlesSearch(Long userSeq, String inputText, Long lastArticleId) {
         Pageable pageable = PageRequest.of(0, 4);
         List<ArticleResponseDTO> searchArticleList;
+        Page<Article> articlesByArticleText;
 
-        // 스크롤 맨처음인 경우 (첫번째 게시글부터)
-        if (lastArticleId == null) {
-            Page<Article> lastArticleIsnull = articleRep.findArticlesByArticleTextLastArticleIsnull(inputText, pageable);
-            // 조회된 게시글 없는 경우
-            if (lastArticleIsnull == null || lastArticleIsnull.getContent().isEmpty()){
-                return null;
-            }
-            searchArticleList = checkAuthSearchArticleList(userSeq, lastArticleIsnull);
+        if (lastArticleId == null) { // 스크롤 맨처음인 경우 (첫번째 게시글부터)
+            articlesByArticleText = articleRep.findArticlesByArticleTextLastArticleIsnull(inputText, pageable);
         }
-        // 스크롤 하단인 경우 (n번째 게시글부터)
-        else {
-            Page<Article> articlesByArticleText = articleRep.findArticlesByArticleText(inputText, lastArticleId, pageable);
-            searchArticleList = checkAuthSearchArticleList(userSeq, articlesByArticleText);
+        else { // 스크롤 하단인 경우 (n번째 게시글부터)
+            articlesByArticleText = articleRep.findArticlesByArticleText(inputText, lastArticleId, pageable);
         }
+
+        // 조회된 게시글 없는 경우
+        if (articlesByArticleText == null || articlesByArticleText.getContent().isEmpty()){
+            return null;
+        }
+        // 권한에 맞게 필터링
+        searchArticleList = checkAuthSearchArticleList(userSeq, articlesByArticleText);
+        // 작성일순 정렬
         searchArticleList.sort(new Comparator<ArticleResponseDTO>() {
             @Override
             public int compare(ArticleResponseDTO o1, ArticleResponseDTO o2) {
