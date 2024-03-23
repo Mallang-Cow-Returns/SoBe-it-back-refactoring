@@ -433,32 +433,21 @@ public class ArticleServiceImpl implements ArticleService{
         return true;
     }
 
-    /**
-     * 사이드바 인기 게시물(articleSeq) 상위 세 개 가져오기
-     * */
-    @Override
-    public List<Long> selectHotPostSeq() {
-        List<Long> list = articleLikeRepo.findHotPostSeq();//.subList(0, 3);
-
-        System.out.println("\n사이드바~~~~~\n");
-        System.out.println(list);
-
-        return list;
-    }
 
     /**
      * 사이드바 인기 게시물 가져오기
      * */
     @Override
     public List<ArticleResponseDTO> selectHotPost(Users user) {
-        List<Long> seqList = selectHotPostSeq();
+        List<Long> seqList = articleLikeRepo.findHotPostSeq();// 인기 상위 3개
 
         if (seqList.isEmpty()) { // 가져온 글이 없다면
-            throw new RuntimeException("조회할 글이 없습니다.");
+            return null;
+            // throw new RuntimeException("조회할 글이 없습니다.");
         }
 
         List<ArticleResponseDTO> articleList = new ArrayList<>();
-        seqList.forEach(f -> articleList.add(findArticleResponse(user.getUserSeq(), f)));
+        seqList.forEach(seq -> articleList.add(findArticleResponse(user.getUserSeq(), seq)));
 
         return articleList;
     }

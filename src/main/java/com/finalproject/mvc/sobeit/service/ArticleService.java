@@ -69,11 +69,6 @@ public interface ArticleService {
     public boolean likeArticle(Users user, Long articleSeq);
 
     /**
-     * 사이드바 인기 게시물(articleSeq) 상위 세 개 가져오기
-     * */
-    public List<Long> selectHotPostSeq();
-
-    /**
      * 사이드바 인기 게시물 가져오기
      * */
     public List<ArticleResponseDTO> selectHotPost(Users user);
