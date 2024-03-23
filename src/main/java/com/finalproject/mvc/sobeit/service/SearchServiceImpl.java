@@ -35,10 +35,12 @@ public class SearchServiceImpl implements SearchService{
     public List<ProfileDTO> usersSearch(Users loggedInUser, String inputText) {
         List<Long> searchUserSeqList = userRep.findByText(inputText);
 
-        if (searchUserSeqList == null || searchUserSeqList.size() == 0) {
-            throw new RuntimeException("검색된 사용자가 없습니다.");
+        // 검색 결과 없는 경우
+        if (searchUserSeqList == null || searchUserSeqList.isEmpty()) {
+            return null;
         }
 
+        // 프로필 카드 조회
         List<ProfileDTO> userList = new ArrayList<>();
         searchUserSeqList.forEach(u -> userList.add(profileService.selectFollowingUser(loggedInUser, u)));
 
