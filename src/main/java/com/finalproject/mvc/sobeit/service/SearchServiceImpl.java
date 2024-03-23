@@ -75,8 +75,6 @@ public class SearchServiceImpl implements SearchService{
                 return o2.getWrittenDate().compareTo(o1.getWrittenDate());
             }
         });
-        System.out.println("테스트---------");
-        System.out.println(searchArticleList);
 
         return searchArticleList;
     }
