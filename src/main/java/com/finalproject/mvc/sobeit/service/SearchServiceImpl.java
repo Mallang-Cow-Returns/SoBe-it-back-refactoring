@@ -35,10 +35,12 @@ public class SearchServiceImpl implements SearchService{
     public List<ProfileDTO> usersSearch(Users loggedInUser, String inputText) {
         List<Long> searchUserSeqList = userRep.findByText(inputText);
 
-        if (searchUserSeqList == null || searchUserSeqList.size() == 0) {
-            throw new RuntimeException("검색된 사용자가 없습니다.");
+        // 검색 결과 없는 경우
+        if (searchUserSeqList == null || searchUserSeqList.isEmpty()) {
+            return null;
         }
 
+        // 프로필 카드 조회
         List<ProfileDTO> userList = new ArrayList<>();
         searchUserSeqList.forEach(u -> userList.add(profileService.selectFollowingUser(loggedInUser, u)));
 
@@ -50,59 +52,24 @@ public class SearchServiceImpl implements SearchService{
      **/
     @Override
     public List<ArticleResponseDTO> articlesSearch(Long userSeq, String inputText, Long lastArticleId) {
-        Pageable pageable = PageRequest.of(0, 4);
+        Pageable pageable = PageRequest.of(0, 4); // 한 번에 글 4개 조회
+        Page<Long> searchArticleSeqList;
         List<ArticleResponseDTO> searchArticleList = new ArrayList<>();
 
-        if (lastArticleId == null) {
-            Page<Article> lastArticleIsnull = articleRep.findArticlesByArticleTextLastArticleIsnull(inputText, pageable);
-
-            if (lastArticleIsnull == null || lastArticleIsnull.getContent().size() == 0){
-                throw new RuntimeException("검색어가 포함된 게시글이 존재하지 않습니다.");
-            }
-
-            for (Article searchArticle: lastArticleIsnull.getContent()){
-                if (searchArticle.getStatus() == 1 || Objects.equals(searchArticle.getUser().getUserSeq(), userSeq)) {
-                    // 전체공개인 경우
-                    ArticleResponseDTO dto = articleService.findArticleResponse(userSeq, searchArticle.getArticleSeq());
-                    searchArticleList.add(dto);
-                }
-                else if (searchArticle.getStatus() == 2) {
-                    // 맞팔공개인 경우
-                    Optional<Following> followCheck = followingRepo.findByFollowingAndFollowerUserSeqVer(userSeq, searchArticle.getUser().getUserSeq());
-                    if (followCheck.isPresent()){
-                        ArticleResponseDTO dto = articleService.findArticleResponse(userSeq, searchArticle.getArticleSeq());
-                        searchArticleList.add(dto);
-                    }
-                }
-            }
+        if (lastArticleId == null) { // 스크롤 맨처음인 경우 (첫번째 게시글부터)
+            searchArticleSeqList = articleRep.findArticlesByArticleTextLastArticleIsnull(userSeq, inputText, pageable);
         }
-        else {
-            Page<Article> articlesByArticleText = articleRep.findArticlesByArticleText(inputText, lastArticleId, pageable);
-            for (Article searchArticle: articlesByArticleText.getContent()){
-                if (searchArticle.getStatus() == 1 || Objects.equals(searchArticle.getUser().getUserSeq(), userSeq)) {
-                    // 전체공개인 경우 혹은 내가 쓴 글인경우
-                    ArticleResponseDTO dto = articleService.findArticleResponse(userSeq, searchArticle.getArticleSeq());
-                    searchArticleList.add(dto);
-                }
-                else if (searchArticle.getStatus() == 2) {
-                    // 맞팔공개인 경우
-                    Optional<Following> followCheck = followingRepo.findByFollowingAndFollowerUserSeqVer(userSeq, searchArticle.getUser().getUserSeq());
-                    if (followCheck.isPresent()){
-                        ArticleResponseDTO dto = articleService.findArticleResponse(userSeq, searchArticle.getArticleSeq());
-                        searchArticleList.add(dto);
-                    }
-                }
-            }
+        else { // 스크롤 하단인 경우 (n번째 게시글부터)
+            searchArticleSeqList = articleRep.findArticlesByArticleText(userSeq, inputText, lastArticleId, pageable);
         }
-        searchArticleList.sort(new Comparator<ArticleResponseDTO>() {
-            @Override
-            public int compare(ArticleResponseDTO o1, ArticleResponseDTO o2) {
-                return o2.getWrittenDate().compareTo(o1.getWrittenDate());
-            }
-        });
-        System.out.println("테스트---------");
-        System.out.println(searchArticleList);
 
+        // 조회된 게시글 없는 경우
+        if (searchArticleSeqList == null || searchArticleSeqList.isEmpty()){
+            return null;
+        }
+
+        // ArticleResponseDTO 가져오기
+        searchArticleSeqList.getContent().forEach(f -> searchArticleList.add(articleService.findArticleResponse(userSeq, f)));
         return searchArticleList;
     }
 

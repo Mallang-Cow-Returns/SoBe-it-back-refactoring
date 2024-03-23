@@ -18,10 +18,22 @@ public interface ArticleRepo extends JpaRepository<Article, Long> {
     @Query("select a from Article a where a.user.userId = ?1 order by a.writtenDate desc")
     List<Article> findArticlesByUser(String user_id);
 
-    @Query("select a from Article a where a.articleSeq < ?2 and a.articleText like %?1%")
-    Page<Article> findArticlesByArticleText(String articleText, Long lastArticleId, Pageable pageable);
-    @Query("select a from Article a where a.articleText like %?1%")
-    Page<Article> findArticlesByArticleTextLastArticleIsnull(String articleText, Pageable pageable);
+    @Query("SELECT a.articleSeq " +
+            "FROM Article a " +
+            "WHERE (a.user.userSeq = ?1 " +
+            "OR a.user.userSeq IN (SELECT f.followingUserSeq FROM Following f WHERE f.user.userSeq = ?1) AND a.status = 1 " +
+            "OR a.user.userSeq IN (SELECT f1.followingUserSeq FROM Following f1 JOIN Following f2 ON f1.followingUserSeq = f2.user.userSeq WHERE f1.user.userSeq=?1 AND f2.followingUserSeq = ?1) AND a.status = 2) " +
+            "AND a.articleText like %?2% " +
+            "AND a.articleSeq < ?3 " +
+            "ORDER BY a.writtenDate DESC")
+    Page<Long> findArticlesByArticleText(Long userSeq, String articleText, Long lastArticleId, Pageable pageable);
+    @Query("SELECT a.articleSeq FROM Article a " +
+            "WHERE (a.user.userSeq = ?1 " +
+            "OR a.user.userSeq IN (SELECT f.followingUserSeq FROM Following f WHERE f.user.userSeq = ?1) AND a.status = 1 " +
+            "OR a.user.userSeq IN (SELECT f1.followingUserSeq FROM Following f1 JOIN Following f2 ON f1.followingUserSeq = f2.user.userSeq WHERE f1.user.userSeq=?1 AND f2.followingUserSeq = ?1) AND a.status = 2) " +
+            "AND a.articleText like %?2% " +
+            "ORDER BY a.writtenDate DESC")
+    Page<Long> findArticlesByArticleTextLastArticleIsnull(Long userSeq, String articleText, Pageable pageable);
     Article findByArticleSeq(Long articleSeq);
 
     @Query("select sum(a.amount) from Article a where a.user.userSeq = ?1 and a.consumptionDate = ?2")
