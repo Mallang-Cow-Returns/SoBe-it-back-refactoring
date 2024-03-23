@@ -20,7 +20,12 @@ public interface ArticleLikeRepo extends JpaRepository<ArticleLike, Long> {
     Optional<Long> countByArticle(Article article);
 
 //    @Query("select a.article.articleSeq, count(a) as likeCount from ArticleLike a group by a.article.articleSeq order by likeCount desc")
-    @Query("SELECT l.article.articleSeq FROM ArticleLike l JOIN Article a on a.articleSeq = l.article.articleSeq where a.status = 1 GROUP BY l.article.articleSeq ORDER BY COUNT(l) DESC")
+    @Query(value="SELECT a.article_Seq\n" +
+            "FROM Article_Like l JOIN Article a on a.article_Seq = l.article_Seq \n" +
+            "WHERE a.status = 1 \n" +
+            "GROUP BY a.article_Seq \n" +
+            "ORDER BY COUNT(l) DESC \n" +
+            "LIMIT 3", nativeQuery = true)
     public List<Long> findHotPostSeq();
 
 }
